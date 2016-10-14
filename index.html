@@ -23,10 +23,10 @@
 <body>
 	<script src="lib/require.js"></script>
 	<script>
-		require.config({ map: { '*': { 'three': 'lib/three', 'WebVR': 'lib/WebVR' }}});
-		require(['three', 'WebVR'], function (three, webvr) {
+		require.config({ map: { '*': { 'three': 'lib/three' } } });
+		require(['three'], function (three) {
 			window.THREE = three;
-			require(['lib/VRControls', 'lib/VREffect', 'lib/ViveController', 'lib/OBJLoader', 'build/main']);
+			require(['lib/WebVR', 'lib/VRControls', 'lib/VREffect', 'lib/ViveController', 'lib/OBJLoader', 'build/main']);
 		});
 	</script>
 </body>

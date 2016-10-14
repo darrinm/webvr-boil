@@ -16,7 +16,6 @@ init();
 animate();
 
 function init() {
-
 	container = document.createElement('div');
 	document.body.appendChild(container);
 
@@ -70,7 +69,6 @@ function init() {
 	];
 
 	for (var i = 0; i < 50; i++) {
-
 		let geometry = geometries[Math.floor(Math.random() * geometries.length)];
 		let material = new THREE.MeshStandardMaterial({
 			color: Math.random() * 0xffffff,
@@ -94,7 +92,6 @@ function init() {
 		object.receiveShadow = true;
 
 		group.add(object);
-
 	}
 
 	//
@@ -127,7 +124,6 @@ function init() {
 	var loader = new THREE.OBJLoader();
 	loader.setPath('models/obj/vive-controller/');
 	loader.load('vr_controller_vive_1_5.obj', function (object) {
-
 		var loader = new THREE.TextureLoader();
 		loader.setPath('models/obj/vive-controller/');
 
@@ -137,11 +133,9 @@ function init() {
 
 		controller1.add(object.clone());
 		controller2.add(object.clone());
-
 	});
 
 	//
-
 	let geometry2 = new THREE.Geometry();
 	geometry2.vertices.push(new THREE.Vector3(0, 0, 0));
 	geometry2.vertices.push(new THREE.Vector3(0, 0, - 1));
@@ -155,40 +149,29 @@ function init() {
 
 	raycaster = new THREE.Raycaster();
 
-
 	//
-
 	effect = new THREE.VREffect(renderer);
 
 	if (WEBVR.isAvailable() === true) {
-
 		document.body.appendChild(WEBVR.getButton(effect));
-
 	}
 
 	//
-
 	window.addEventListener('resize', onWindowResize, false);
-
 }
 
 function onWindowResize() {
-
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 
 	effect.setSize(window.innerWidth, window.innerHeight);
-
 }
 
 function onTriggerDown(event) {
-
 	var controller = event.target;
-
 	var intersections = getIntersections(controller);
 
 	if (intersections.length > 0) {
-
 		var intersection = intersections[0];
 
 		tempMatrix.getInverse(controller.matrixWorld);
@@ -200,17 +183,12 @@ function onTriggerDown(event) {
 		controller.add(object);
 
 		controller.userData.selected = object;
-
 	}
-
 }
 
 function onTriggerUp(event) {
-
 	var controller = event.target;
-
 	if (controller.userData.selected !== undefined) {
-
 		var object = controller.userData.selected;
 		object.matrix.premultiply(controller.matrixWorld);
 		object.matrix.decompose(object.position, object.quaternion, object.scale);
@@ -218,25 +196,19 @@ function onTriggerUp(event) {
 		group.add(object);
 
 		controller.userData.selected = undefined;
-
 	}
-
-
 }
 
 function getIntersections(controller) {
-
 	tempMatrix.identity().extractRotation(controller.matrixWorld);
 
 	raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
 	raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
 	return raycaster.intersectObjects(group.children);
-
 }
 
 function intersectObjects(controller) {
-
 	// Do not highlight when already selected
 
 	if (controller.userData.selected !== undefined) return;
@@ -245,7 +217,6 @@ function intersectObjects(controller) {
 	var intersections = getIntersections(controller);
 
 	if (intersections.length > 0) {
-
 		var intersection = intersections[0];
 
 		var object = <THREE.Mesh>intersection.object;
@@ -253,37 +224,26 @@ function intersectObjects(controller) {
 		intersected.push(object);
 
 		line.scale.z = intersection.distance;
-
 	} else {
-
 		line.scale.z = 5;
-
 	}
-
 }
 
 function cleanIntersected() {
-
 	while (intersected.length) {
-
 		var object = <THREE.Mesh>intersected.pop();
 		(<THREE.MeshStandardMaterial>object.material).emissive.r = 0;
-
 	}
-
 }
 
 //
 
 function animate() {
-
 	effect.requestAnimationFrame(animate);
 	render();
-
 }
 
 function render() {
-
 	controller1.update();
 	controller2.update();
 
@@ -295,6 +255,5 @@ function render() {
 	intersectObjects(controller2);
 
 	effect.render(scene, camera);
-
 }
 

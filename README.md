@@ -4,7 +4,7 @@ npm install
 
 # build
 
-tsc
+make
 
 # run
 

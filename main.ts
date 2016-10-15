@@ -1,16 +1,30 @@
+// TODO: three-vrcontrols.d.ts is out of date.
+declare namespace THREE {
+    export class VRControlsFixed extends VRControls {
+        constructor(camera: Camera, callback?: (param: string)=>void);
+
+		resetSensor(): void;
+		resetPose(): void;
+		getStandingMatrix(): THREE.Matrix4;
+
+		standing: boolean;
+		userHeight: number;
+    }
+}
+
 if (WEBVR.isAvailable() === false) {
 	document.body.appendChild(<Node>WEBVR.getMessage());
 }
 
-var container;
-var camera, scene, renderer;
-var effect, controls;
-var controller1, controller2;
+var container: HTMLDivElement;
+var camera: THREE.PerspectiveCamera, scene: THREE.Scene, renderer: THREE.WebGLRenderer;
+var effect: THREE.VREffect, controls: THREE.VRControlsFixed;
+var controller1: THREE.ViveController, controller2: THREE.ViveController;
 
 var raycaster: THREE.Raycaster, intersected: THREE.Object3D[] = [];
 var tempMatrix = new THREE.Matrix4();
 
-var group;
+var group: THREE.Group;
 
 init();
 animate();
@@ -19,15 +33,8 @@ function init() {
 	container = document.createElement('div');
 	document.body.appendChild(container);
 
-	var info = document.createElement('div');
-	info.style.position = 'absolute';
-	info.style.top = '10px';
-	info.style.width = '100%';
-	info.style.textAlign = 'center';
-	info.innerHTML = 'webvr-boil';
-	container.appendChild(info);
-
 	scene = new THREE.Scene();
+	window['scene'] = scene; // For three.js inspector
 	scene.background = new THREE.Color(0x808080);
 
 	camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10);
@@ -104,7 +111,7 @@ function init() {
 	renderer.gammaOutput = true;
 	container.appendChild(renderer.domElement);
 
-	controls = new THREE.VRControls(camera);
+	controls = <THREE.VRControlsFixed>new THREE.VRControls(camera);
 	controls.standing = true;
 
 	// controllers
@@ -127,9 +134,9 @@ function init() {
 		var loader = new THREE.TextureLoader();
 		loader.setPath('models/obj/vive-controller/');
 
-		var controller = object.children[0];
-		controller.material.map = loader.load('onepointfive_texture.png');
-		controller.material.specularMap = loader.load('onepointfive_spec.png');
+		var meshMaterial = <THREE.MeshBasicMaterial>(<THREE.Mesh>object.children[0]).material;
+		meshMaterial.map = loader.load('onepointfive_texture.png');
+		meshMaterial.specularMap = loader.load('onepointfive_spec.png');
 
 		controller1.add(object.clone());
 		controller2.add(object.clone());
@@ -239,7 +246,8 @@ function cleanIntersected() {
 //
 
 function animate() {
-	effect.requestAnimationFrame(animate);
+	// TODO: three-vreffect.d.ts is out of date
+	(<any>effect).requestAnimationFrame(animate);
 	render();
 }
 

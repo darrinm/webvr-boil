@@ -175,7 +175,7 @@ function onWindowResize() {
 }
 
 function onTriggerDown(event) {
-	var controller = event.target;
+	var controller = <THREE.Object3D>event.target;
 	var intersections = getIntersections(controller);
 
 	if (intersections.length > 0) {
@@ -194,19 +194,19 @@ function onTriggerDown(event) {
 }
 
 function onTriggerUp(event) {
-	var controller = event.target;
+	var controller = <THREE.Object3D>event.target;
 	if (controller.userData.selected !== undefined) {
-		var object = controller.userData.selected;
+		var object = <THREE.Mesh>controller.userData.selected;
 		object.matrix.premultiply(controller.matrixWorld);
 		object.matrix.decompose(object.position, object.quaternion, object.scale);
-		object.material.emissive.b = 0;
+		(<THREE.MeshStandardMaterial>object.material).emissive.b = 0;
 		group.add(object);
 
 		controller.userData.selected = undefined;
 	}
 }
 
-function getIntersections(controller) {
+function getIntersections(controller): THREE.Intersection[] {
 	tempMatrix.identity().extractRotation(controller.matrixWorld);
 
 	raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);

@@ -124,14 +124,14 @@ export class App {
 
 		let controller1 = this.controller1 = new THREE.ViveController(0);
 		controller1.standingMatrix = controls.getStandingMatrix();
-		controller1.addEventListener('triggerdown', () => this.onTriggerDown);
-		controller1.addEventListener('triggerup', () => this.onTriggerUp);
+		controller1.addEventListener('triggerdown', (event) => this.onTriggerDown(event));
+		controller1.addEventListener('triggerup', (event) => this.onTriggerUp(event));
 		scene.add(controller1);
 
 		let controller2 = this.controller2 = new THREE.ViveController(1);
 		controller2.standingMatrix = controls.getStandingMatrix();
-		controller2.addEventListener('triggerdown', () => this.onTriggerDown);
-		controller2.addEventListener('triggerup', () => this.onTriggerUp);
+		controller2.addEventListener('triggerdown', (event) => this.onTriggerDown(event));
+		controller2.addEventListener('triggerup', (event) => this.onTriggerUp(event));
 		scene.add(controller2);
 
 		var loader = new THREE.OBJLoader();
@@ -170,7 +170,7 @@ export class App {
 		}
 
 		//
-		window.addEventListener('resize', () => this.onWindowResize, false);
+		window.addEventListener('resize', () => this.onWindowResize(), false);
 	}
 
 	onWindowResize() {
@@ -253,7 +253,7 @@ export class App {
 
 	animate() {
 		// TODO: three-vreffect.d.ts is out of date
-		(<any>this.effect).requestAnimationFrame(() => this.animate);
+		(<any>this.effect).requestAnimationFrame(() => this.animate());
 		this.render();
 	}
 

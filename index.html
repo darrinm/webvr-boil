@@ -26,7 +26,7 @@
 		require.config({ map: { '*': { 'three': 'lib/three' } } });
 		require(['three'], function (three) {
 			window.THREE = three;
-			require(['main', 'lib/WebVR', 'lib/VRControls', 'lib/VREffect', 'lib/ViveController', 'lib/OBJLoader'], function (App) {
+			require(['app', 'lib/WebVR', 'lib/VRControls', 'lib/VREffect', 'lib/ViveController', 'lib/OBJLoader'], function (App) {
 				var app = new App.App();
 			});
 		});

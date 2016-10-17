@@ -4,6 +4,7 @@
 		"target": "es5",
 		"noImplicitAny": false,
 		"sourceMap": true,
+		"inlineSources": true,
 		"outDir": "build",
 		"allowJs": true,
 		"diagnostics": true,

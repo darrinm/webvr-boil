@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // TODO: three-vrcontrols.d.ts is out of date.
 interface VRControlsFixed extends THREE.VRControls {
-	constructor(camera: THREE.Camera, callback?: (param: string)=>void);
+	constructor(camera: THREE.Camera, callback?: (param: string) => void);
 
 	resetSensor(): void;
 	resetPose(): void;
@@ -21,10 +21,17 @@ export class App {
 	controls: VRControlsFixed;
 	controller1: THREE.ViveController;
 	controller2: THREE.ViveController;
-	raycaster: THREE.Raycaster;
+	raycaster = new THREE.Raycaster();
 	intersected: THREE.Object3D[] = [];
 	tempMatrix = new THREE.Matrix4();
-	group: THREE.Group;
+	group = new THREE.Group();
+
+	mouse = new THREE.Vector2();
+	INTERSECTED: any;
+	SELECTED: any;
+	offset = new THREE.Vector3();
+	plane = new THREE.Plane();
+	intersection = new THREE.Vector3();
 
 	constructor() {
 		if (WEBVR.isAvailable() === false) {
@@ -70,7 +77,7 @@ export class App {
 		light.shadow.mapSize.set(4096, 4096);
 		scene.add(light);
 
-		let group = this.group = new THREE.Group();
+		let group = this.group;
 		scene.add(group);
 
 		var geometries: THREE.Geometry[] = [
@@ -160,7 +167,11 @@ export class App {
 		controller1.add(line.clone());
 		controller2.add(line.clone());
 
-		this.raycaster = new THREE.Raycaster();
+		// Mouse drag/drop stuff.
+
+		renderer.domElement.addEventListener('mousemove', (event) => this.onDocumentMouseMove(event), true);
+		renderer.domElement.addEventListener('mousedown', (event) => this.onDocumentMouseDown(event), true);
+		renderer.domElement.addEventListener('mouseup', (event) => this.onDocumentMouseUp(event), true);
 
 		//
 		let effect = this.effect = new THREE.VREffect(renderer);
@@ -171,6 +182,63 @@ export class App {
 
 		//
 		window.addEventListener('resize', () => this.onWindowResize(), false);
+	}
+
+	onDocumentMouseDown(event: MouseEvent) {
+		event.preventDefault();
+
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		var intersects = this.raycaster.intersectObjects(this.group.children);
+		if (intersects.length > 0) {
+			//controls.enabled = false;
+			this.SELECTED = intersects[0].object;
+			if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
+				this.offset.copy(this.intersection).sub(this.SELECTED.position);
+			}
+			this.container.style.cursor = 'move';
+		}
+	}
+
+	onDocumentMouseMove(event: MouseEvent) {
+		event.preventDefault();
+
+		this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		this.mouse.y = (event.clientY / window.innerHeight) * 2 + 1;
+
+		if (this.SELECTED) {
+			if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
+				this.SELECTED.position.copy(this.intersection.sub(this.offset));
+			}
+			return;
+		}
+		var intersects = this.raycaster.intersectObjects(this.group.children);
+		if (intersects.length > 0) {
+			if (this.INTERSECTED != intersects[0].object) {
+				if (this.INTERSECTED)
+					this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
+				this.INTERSECTED = intersects[0].object;
+				this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
+				this.plane.setFromNormalAndCoplanarPoint(
+					this.camera.getWorldDirection(this.plane.normal),
+					this.INTERSECTED.position);
+			}
+			this.container.style.cursor = 'pointer';
+		} else {
+			if (this.INTERSECTED)
+				this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
+			this.INTERSECTED = null;
+			this.container.style.cursor = 'auto';
+		}
+	}
+
+	onDocumentMouseUp(event: MouseEvent) {
+		event.preventDefault();
+
+		//controls.enabled = true;
+		if (this.INTERSECTED) {
+			this.SELECTED = null;
+		}
+		this.container.style.cursor = 'auto';
 	}
 
 	onWindowResize() {

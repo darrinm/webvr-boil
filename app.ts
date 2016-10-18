@@ -27,8 +27,8 @@ export class App {
 	group = new THREE.Group();
 
 	mouse = new THREE.Vector2();
-	INTERSECTED: any;
-	SELECTED: any;
+	INTERSECTED?: THREE.Mesh;
+	SELECTED?: THREE.Mesh;
 	offset = new THREE.Vector3();
 	plane = new THREE.Plane();
 	intersection = new THREE.Vector3();
@@ -53,6 +53,7 @@ export class App {
 		let camera = this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10);
 		scene.add(camera);
 
+		/*
 		let geometry = new THREE.PlaneGeometry(4, 4);
 		let material = new THREE.MeshStandardMaterial({
 			color: 0xeeeeee,
@@ -63,6 +64,7 @@ export class App {
 		floor.rotation.x = - Math.PI / 2;
 		floor.receiveShadow = true;
 		scene.add(floor);
+		*/
 
 		scene.add(new THREE.HemisphereLight(0x808080, 0x606060));
 
@@ -111,7 +113,9 @@ export class App {
 			object.castShadow = true;
 			object.receiveShadow = true;
 
-			group.add(object);
+			object.name = 'geom' + i;
+
+			this.scene.add(object);
 		}
 
 		//
@@ -169,9 +173,9 @@ export class App {
 
 		// Mouse drag/drop stuff.
 
-		renderer.domElement.addEventListener('mousemove', (event) => this.onDocumentMouseMove(event), true);
-		renderer.domElement.addEventListener('mousedown', (event) => this.onDocumentMouseDown(event), true);
-		renderer.domElement.addEventListener('mouseup', (event) => this.onDocumentMouseUp(event), true);
+		renderer.domElement.addEventListener('mousemove', (event) => this.onDocumentMouseMove(event));
+		renderer.domElement.addEventListener('mousedown', (event) => this.onDocumentMouseDown(event));
+		renderer.domElement.addEventListener('mouseup', (event) => this.onDocumentMouseUp(event));
 
 		//
 		let effect = this.effect = new THREE.VREffect(renderer);
@@ -188,10 +192,10 @@ export class App {
 		event.preventDefault();
 
 		this.raycaster.setFromCamera(this.mouse, this.camera);
-		var intersects = this.raycaster.intersectObjects(this.group.children);
+		var intersects = this.raycaster.intersectObjects(this.scene.children, true);
 		if (intersects.length > 0) {
 			//controls.enabled = false;
-			this.SELECTED = intersects[0].object;
+			this.SELECTED = <THREE.Mesh>intersects[0].object;
 			if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
 				this.offset.copy(this.intersection).sub(this.SELECTED.position);
 			}
@@ -202,22 +206,26 @@ export class App {
 	onDocumentMouseMove(event: MouseEvent) {
 		event.preventDefault();
 
+		// Calculate mouse position in normalized device coordinates
+		// (-1 to +1) for both components.
 		this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-		this.mouse.y = (event.clientY / window.innerHeight) * 2 + 1;
+		this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
+		this.raycaster.setFromCamera(this.mouse, this.camera);
 		if (this.SELECTED) {
 			if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
 				this.SELECTED.position.copy(this.intersection.sub(this.offset));
 			}
 			return;
 		}
-		var intersects = this.raycaster.intersectObjects(this.group.children);
+		var intersects = this.raycaster.intersectObjects(this.scene.children, true);
 		if (intersects.length > 0) {
 			if (this.INTERSECTED != intersects[0].object) {
 				if (this.INTERSECTED)
-					this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
-				this.INTERSECTED = intersects[0].object;
-				this.INTERSECTED.currentHex = this.INTERSECTED.material.color.getHex();
+					(<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.setHex(this.INTERSECTED['originalColor']);
+				this.INTERSECTED = <THREE.Mesh>intersects[0].object;
+				this.INTERSECTED['originalColor'] = (<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.getHex();
+				(<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.setHex(0xffff00);
 				this.plane.setFromNormalAndCoplanarPoint(
 					this.camera.getWorldDirection(this.plane.normal),
 					this.INTERSECTED.position);
@@ -225,8 +233,8 @@ export class App {
 			this.container.style.cursor = 'pointer';
 		} else {
 			if (this.INTERSECTED)
-				this.INTERSECTED.material.color.setHex(this.INTERSECTED.currentHex);
-			this.INTERSECTED = null;
+				(<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.setHex(this.INTERSECTED['originalColor']);
+			this.INTERSECTED = undefined;
 			this.container.style.cursor = 'auto';
 		}
 	}
@@ -236,7 +244,7 @@ export class App {
 
 		//controls.enabled = true;
 		if (this.INTERSECTED) {
-			this.SELECTED = null;
+			this.SELECTED = undefined;
 		}
 		this.container.style.cursor = 'auto';
 	}
@@ -280,7 +288,7 @@ export class App {
 		}
 	}
 
-	getIntersections(controller): THREE.Intersection[] {
+	private getIntersections(controller): THREE.Intersection[] {
 		this.tempMatrix.identity().extractRotation(controller.matrixWorld);
 
 		this.raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);

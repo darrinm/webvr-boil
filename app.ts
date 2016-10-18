@@ -27,11 +27,10 @@ export class App {
 	group = new THREE.Group();
 
 	mouse = new THREE.Vector2();
-	INTERSECTED?: THREE.Mesh;
-	SELECTED?: THREE.Mesh;
-	offset = new THREE.Vector3();
-	plane = new THREE.Plane();
-	intersection = new THREE.Vector3();
+	intersectedMesh?: THREE.Mesh;
+	selectedMesh?: THREE.Mesh;
+	intersectionOffset = new THREE.Vector3();
+	intersectionPlane = new THREE.Plane();
 
 	constructor() {
 		if (WEBVR.isAvailable() === false) {
@@ -60,7 +59,7 @@ export class App {
 			roughness: 1.0,
 			metalness: 0.0
 		});
-		var floor = new THREE.Mesh(geometry, material);
+		let floor = new THREE.Mesh(geometry, material);
 		floor.rotation.x = - Math.PI / 2;
 		floor.receiveShadow = true;
 		scene.add(floor);
@@ -68,7 +67,7 @@ export class App {
 
 		scene.add(new THREE.HemisphereLight(0x808080, 0x606060));
 
-		var light = new THREE.DirectionalLight(0xffffff);
+		let light = new THREE.DirectionalLight(0xffffff);
 		light.position.set(0, 6, 0);
 		light.castShadow = true;
 		let shadowCamera = <THREE.OrthographicCamera>light.shadow.camera;
@@ -82,7 +81,7 @@ export class App {
 		let group = this.group;
 		scene.add(group);
 
-		var geometries: THREE.Geometry[] = [
+		let geometries: THREE.Geometry[] = [
 			new THREE.BoxGeometry(0.2, 0.2, 0.2),
 			new THREE.ConeGeometry(0.2, 0.2, 64),
 			new THREE.CylinderGeometry(0.2, 0.2, 0.2, 64),
@@ -90,7 +89,7 @@ export class App {
 			new THREE.TorusGeometry(0.2, 0.04, 64, 32)
 		];
 
-		for (var i = 0; i < 50; i++) {
+		for (let i = 0; i < 50; i++) {
 			let geometry = geometries[Math.floor(Math.random() * geometries.length)];
 			let material = new THREE.MeshStandardMaterial({
 				color: Math.random() * 0xffffff,
@@ -98,7 +97,7 @@ export class App {
 				metalness: 0.0
 			});
 
-			var object = new THREE.Mesh(geometry, material);
+			let object = new THREE.Mesh(geometry, material);
 
 			object.position.x = Math.random() * 4 - 2;
 			object.position.y = Math.random() * 2;
@@ -145,13 +144,13 @@ export class App {
 		controller2.addEventListener('triggerup', (event) => this.onTriggerUp(event));
 		scene.add(controller2);
 
-		var loader = new THREE.OBJLoader();
+		let loader = new THREE.OBJLoader();
 		loader.setPath('models/obj/vive-controller/');
 		loader.load('vr_controller_vive_1_5.obj', function (object) {
-			var loader = new THREE.TextureLoader();
+			let loader = new THREE.TextureLoader();
 			loader.setPath('models/obj/vive-controller/');
 
-			var meshMaterial = <THREE.MeshBasicMaterial>(<THREE.Mesh>object.children[0]).material;
+			let meshMaterial = <THREE.MeshBasicMaterial>(<THREE.Mesh>object.children[0]).material;
 			meshMaterial.map = loader.load('onepointfive_texture.png');
 			meshMaterial.specularMap = loader.load('onepointfive_spec.png');
 
@@ -164,7 +163,7 @@ export class App {
 		geometry2.vertices.push(new THREE.Vector3(0, 0, 0));
 		geometry2.vertices.push(new THREE.Vector3(0, 0, - 1));
 
-		var line = new THREE.Line(geometry2);
+		let line = new THREE.Line(geometry2);
 		line.name = 'line';
 		line.scale.z = 5;
 
@@ -192,13 +191,13 @@ export class App {
 		event.preventDefault();
 
 		this.raycaster.setFromCamera(this.mouse, this.camera);
-		var intersects = this.raycaster.intersectObjects(this.scene.children, true);
+		let intersects = this.raycaster.intersectObjects(this.scene.children, true);
 		if (intersects.length > 0) {
 			//controls.enabled = false;
-			this.SELECTED = <THREE.Mesh>intersects[0].object;
-			if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
-				this.offset.copy(this.intersection).sub(this.SELECTED.position);
-			}
+			this.selectedMesh = <THREE.Mesh>intersects[0].object;
+			let intersectionPoint = this.raycaster.ray.intersectPlane(this.intersectionPlane);
+			if (intersectionPoint)
+				this.intersectionOffset.copy(intersectionPoint).sub(this.selectedMesh.position);
 			this.container.style.cursor = 'move';
 		}
 	}
@@ -212,29 +211,29 @@ export class App {
 		this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
 		this.raycaster.setFromCamera(this.mouse, this.camera);
-		if (this.SELECTED) {
-			if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
-				this.SELECTED.position.copy(this.intersection.sub(this.offset));
-			}
+		if (this.selectedMesh) {
+			let intersectionPoint = this.raycaster.ray.intersectPlane(this.intersectionPlane);
+			if (intersectionPoint)
+				this.selectedMesh.position.copy(intersectionPoint.sub(this.intersectionOffset));
 			return;
 		}
-		var intersects = this.raycaster.intersectObjects(this.scene.children, true);
+		let intersects = this.raycaster.intersectObjects(this.scene.children, true);
 		if (intersects.length > 0) {
-			if (this.INTERSECTED != intersects[0].object) {
-				if (this.INTERSECTED)
-					(<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.setHex(this.INTERSECTED['originalColor']);
-				this.INTERSECTED = <THREE.Mesh>intersects[0].object;
-				this.INTERSECTED['originalColor'] = (<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.getHex();
-				(<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.setHex(0xffff00);
-				this.plane.setFromNormalAndCoplanarPoint(
-					this.camera.getWorldDirection(this.plane.normal),
-					this.INTERSECTED.position);
+			if (this.intersectedMesh != intersects[0].object) {
+				if (this.intersectedMesh)
+					(<THREE.MeshStandardMaterial>this.intersectedMesh.material).color.setHex(this.intersectedMesh['originalColor']);
+				this.intersectedMesh = <THREE.Mesh>intersects[0].object;
+				this.intersectedMesh['originalColor'] = (<THREE.MeshStandardMaterial>this.intersectedMesh.material).color.getHex();
+				(<THREE.MeshStandardMaterial>this.intersectedMesh.material).color.setHex(0xffff00);
+				this.intersectionPlane.setFromNormalAndCoplanarPoint(
+					this.camera.getWorldDirection(this.intersectionPlane.normal),
+					this.intersectedMesh.position);
 			}
 			this.container.style.cursor = 'pointer';
 		} else {
-			if (this.INTERSECTED)
-				(<THREE.MeshStandardMaterial>this.INTERSECTED.material).color.setHex(this.INTERSECTED['originalColor']);
-			this.INTERSECTED = undefined;
+			if (this.intersectedMesh)
+				(<THREE.MeshStandardMaterial>this.intersectedMesh.material).color.setHex(this.intersectedMesh['originalColor']);
+			this.intersectedMesh = undefined;
 			this.container.style.cursor = 'auto';
 		}
 	}
@@ -243,9 +242,7 @@ export class App {
 		event.preventDefault();
 
 		//controls.enabled = true;
-		if (this.INTERSECTED) {
-			this.SELECTED = undefined;
-		}
+		this.selectedMesh = undefined;
 		this.container.style.cursor = 'auto';
 	}
 
@@ -261,11 +258,11 @@ export class App {
 		let intersections = this.getIntersections(controller);
 
 		if (intersections.length > 0) {
-			var intersection = intersections[0];
+			let intersection = intersections[0];
 
 			this.tempMatrix.getInverse(controller.matrixWorld);
 
-			var object = <THREE.Mesh>intersection.object;
+			let object = <THREE.Mesh>intersection.object;
 			object.matrix.premultiply(this.tempMatrix);
 			object.matrix.decompose(object.position, object.quaternion, object.scale);
 			(<THREE.MeshStandardMaterial>object.material).emissive.b = 1;
@@ -278,7 +275,7 @@ export class App {
 	onTriggerUp(event) {
 		let controller = <THREE.Object3D>event.target;
 		if (controller.userData.selected !== undefined) {
-			var object = <THREE.Mesh>controller.userData.selected;
+			let object = <THREE.Mesh>controller.userData.selected;
 			object.matrix.premultiply(controller.matrixWorld);
 			object.matrix.decompose(object.position, object.quaternion, object.scale);
 			(<THREE.MeshStandardMaterial>object.material).emissive.b = 0;
@@ -302,13 +299,13 @@ export class App {
 
 		if (controller.userData.selected !== undefined) return;
 
-		var line = controller.getObjectByName('line');
-		var intersections = this.getIntersections(controller);
+		let line = controller.getObjectByName('line');
+		let intersections = this.getIntersections(controller);
 
 		if (intersections.length > 0) {
-			var intersection = intersections[0];
+			let intersection = intersections[0];
 
-			var object = <THREE.Mesh>intersection.object;
+			let object = <THREE.Mesh>intersection.object;
 			(<THREE.MeshStandardMaterial>object.material).emissive.r = 1;
 			this.intersected.push(object);
 
@@ -320,7 +317,7 @@ export class App {
 
 	cleanIntersected() {
 		while (this.intersected.length) {
-			var object = <THREE.Mesh>this.intersected.pop();
+			let object = <THREE.Mesh>this.intersected.pop();
 			(<THREE.MeshStandardMaterial>object.material).emissive.r = 0;
 		}
 	}

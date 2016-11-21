@@ -52,7 +52,6 @@ export class App {
 		let camera = this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10);
 		scene.add(camera);
 
-		/*
 		let geometry = new THREE.PlaneGeometry(4, 4);
 		let material = new THREE.MeshStandardMaterial({
 			color: 0xeeeeee,
@@ -63,7 +62,6 @@ export class App {
 		floor.rotation.x = - Math.PI / 2;
 		floor.receiveShadow = true;
 		scene.add(floor);
-		*/
 
 		scene.add(new THREE.HemisphereLight(0x808080, 0x606060));
 
@@ -187,7 +185,7 @@ export class App {
 		window.addEventListener('resize', () => this.onWindowResize(), false);
 	}
 
-	onDocumentMouseDown(event: MouseEvent) {
+	private onDocumentMouseDown(event: MouseEvent) {
 		event.preventDefault();
 
 		this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -202,7 +200,7 @@ export class App {
 		}
 	}
 
-	onDocumentMouseMove(event: MouseEvent) {
+	private onDocumentMouseMove(event: MouseEvent) {
 		event.preventDefault();
 
 		// Calculate mouse position in normalized device coordinates
@@ -238,7 +236,7 @@ export class App {
 		}
 	}
 
-	onDocumentMouseUp(event: MouseEvent) {
+	private onDocumentMouseUp(event: MouseEvent) {
 		event.preventDefault();
 
 		//controls.enabled = true;
@@ -246,14 +244,14 @@ export class App {
 		this.container.style.cursor = 'auto';
 	}
 
-	onWindowResize() {
+	private onWindowResize() {
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
 
 		this.effect.setSize(window.innerWidth, window.innerHeight);
 	}
 
-	onTriggerDown(event) {
+	private onTriggerDown(event) {
 		let controller = <THREE.Object3D>event.target;
 		let intersections = this.getIntersections(controller);
 
@@ -272,7 +270,7 @@ export class App {
 		}
 	}
 
-	onTriggerUp(event) {
+	private onTriggerUp(event) {
 		let controller = <THREE.Object3D>event.target;
 		if (controller.userData.selected !== undefined) {
 			let object = <THREE.Mesh>controller.userData.selected;
@@ -291,10 +289,10 @@ export class App {
 		this.raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
 		this.raycaster.ray.direction.set(0, 0, -1).applyMatrix4(this.tempMatrix);
 
-		return this.raycaster.intersectObjects(this.group.children);
+		return this.raycaster.intersectObjects(this.scene.children, true);
 	}
 
-	intersectObjects(controller) {
+	private intersectObjects(controller) {
 		// Do not highlight when already selected
 
 		if (controller.userData.selected !== undefined) return;
@@ -315,7 +313,7 @@ export class App {
 		}
 	}
 
-	cleanIntersected() {
+	private cleanIntersected() {
 		while (this.intersected.length) {
 			let object = <THREE.Mesh>this.intersected.pop();
 			(<THREE.MeshStandardMaterial>object.material).emissive.r = 0;
@@ -324,13 +322,13 @@ export class App {
 
 	//
 
-	animate() {
+	private animate() {
 		// TODO: three-vreffect.d.ts is out of date
 		(<any>this.effect).requestAnimationFrame(() => this.animate());
 		this.render();
 	}
 
-	render() {
+	private render() {
 		this.controller1.update();
 		this.controller2.update();
 
